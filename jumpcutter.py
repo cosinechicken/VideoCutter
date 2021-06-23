@@ -3,6 +3,7 @@ from PIL import Image
 import subprocess
 from audiotsm import phasevocoder
 from audiotsm.io.wav import WavReader, WavWriter
+from numpy import dtype
 from scipy.io import wavfile
 import numpy as np
 import re
@@ -113,39 +114,34 @@ AUDIO_FADE_ENVELOPE_SIZE = 400 # smooth out transitiion's audio by quickly fadin
     
 createPath(TEMP_FOLDER)
 
+# split the video into individual frames
 command = "ffmpeg -i "+INPUT_FILE+" -qscale:v "+str(FRAME_QUALITY)+" "+TEMP_FOLDER+"/frame%06d.jpg -hide_banner"
 subprocess.call(command, shell=True)
 
+# copy the audio into a wav file
 command = "ffmpeg -i "+INPUT_FILE+" -ab 160k -ac 2 -ar "+str(SAMPLE_RATE)+" -vn "+TEMP_FOLDER+"/audio.wav"
 
 subprocess.call(command, shell=True)
 
-command = "ffmpeg -i "+TEMP_FOLDER+"/input.mp4 2>&1"
-f = open(TEMP_FOLDER+"/params.txt", "w")
-subprocess.call(command, shell=True, stdout=f)
-
-
-
+# sampleRate: int, number of times per second the audio is sampled
+# audioData: numpy array of int16's, (116134912 samples, 2 channels)
 sampleRate, audioData = wavfile.read(TEMP_FOLDER+"/audio.wav")
+print(audioData.shape)
+stringTemp = ""
+for i in range(100):
+    stringTemp += (str(audioData[10000000+i][0]) + " ")
+print(stringTemp)
+print(dtype(audioData[0][0]))
 audioSampleCount = audioData.shape[0]
 maxAudioVolume = getMaxVolume(audioData)
-
-f = open(TEMP_FOLDER+"/params.txt", 'r+')
-pre_params = f.read()
-f.close()
-params = pre_params.split('\n')
-for line in params:
-    m = re.search('Stream #.*Video.* ([0-9]*) fps',line)
-    if m is not None:
-        frameRate = float(m.group(1))
 
 samplesPerFrame = sampleRate/frameRate
 
 audioFrameCount = int(math.ceil(audioSampleCount/samplesPerFrame))
 
+print("AudioFrameCount: " + str(audioFrameCount))
+
 hasLoudAudio = np.zeros((audioFrameCount))
-
-
 
 for i in range(audioFrameCount):
     start = int(i*samplesPerFrame)
