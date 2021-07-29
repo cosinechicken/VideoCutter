@@ -70,13 +70,10 @@ def deletePath(s): # Dangerous! Watch out!
         print ("Deletion of the directory %s failed" % s)
         print(OSError)
 
-parser = argparse.ArgumentParser(description='Modifies a video file to play at different speeds when there is sound vs. silence.')
+parser = argparse.ArgumentParser(description='Copies a video file.')
 parser.add_argument('--input_file', type=str,  help='the video file you want modified')
 parser.add_argument('--url', type=str, help='A youtube url to download and process')
 parser.add_argument('--output_file', type=str, default="", help="the output file. (optional. if not included, it'll just modify the input file name)")
-parser.add_argument('--sounded_speed', type=float, default=1.00, help="the speed that sounded (spoken) frames should be played at. Typically 1.")
-parser.add_argument('--silent_speed', type=float, default=5.00, help="the speed that silent frames should be played at. 999999 for jumpcutting.")
-parser.add_argument('--frame_margin', type=float, default=1, help="some silent frames adjacent to sounded frames are included to provide context. How many frames on either the side of speech should be included? That's this variable.")
 parser.add_argument('--sample_rate', type=float, default=44100, help="sample rate of the input and output videos")
 parser.add_argument('--frame_rate', type=float, default=23.98, help="frame rate of the input and output videos. optional... I try to find it out myself, but it doesn't always work.")
 parser.add_argument('--frame_quality', type=int, default=10, help="quality of frames to be extracted from input video. 1 is highest, 31 is lowest, 3 was the original default.")
@@ -87,8 +84,6 @@ printTime()
 
 frameRate = args.frame_rate
 SAMPLE_RATE = args.sample_rate
-FRAME_SPREADAGE = args.frame_margin
-NEW_SPEED = [args.silent_speed, args.sounded_speed]
 ########################## (1)
 # if args.url != None:
 #     INPUT_FILE = downloadFile(args.url)
@@ -147,52 +142,16 @@ print("SamplesPerFrame: " + str(samplesPerFrame))
 print("AudioFrameCount: " + str(audioFrameCount))
 ###
 
-# Iterate through each video-frame
-for i in range(audioFrameCount):
-    start = int(i*samplesPerFrame)                              # Start audio-frame of video-frame i
-    end = min(int((i+1)*samplesPerFrame),audioSampleCount)      # End audio-frame of video-frame i
-    audiochunks = audioData[start:end]                          # Array of audio from start to end audio-frame of video-frame i
-    maxchunksVolume = float(getMaxVolume(audiochunks))/maxAudioVolume   # Ratio between the highest volume in audiochunks to highest volume in the video
-
-# hasLoudAudio is 1 if the frame is loud enough and 0 otherwise
-chunks = [[0,audioFrameCount,1]]          # 2-D array of following form: [[start-video-chunk, end-video-chunk, 0 if it shouldn't be included, 1 if the chunk should be included]]
-
-outputAudioData = np.zeros((0,audioData.shape[1]))
-outputPointer = 0
-
 lastExistingFrame = None
 
 printTime()
 
-# change audioChunk to audioData
-    
-sFile = TEMP_FOLDER+"/tempStart.wav"            # First temporary file
-eFile = TEMP_FOLDER+"/tempEnd.wav"              #
-wavfile.write(sFile,SAMPLE_RATE,audioData)     # Write the sounds in audioChunk to sFile
-# The below chunk of code takes sFile, runs it at the appropriate speed depending on if chunk[2] is 0 or 1, and outputs to eFile.
-with WavReader(sFile) as reader:
-    with WavWriter(eFile, reader.channels, reader.samplerate) as writer:
-        tsm = phasevocoder(reader.channels, speed=1)
-        tsm.run(reader, writer)
-###
-_, alteredAudioData = wavfile.read(eFile)       # alteredAudiData is audioData for the frames in eFile, the shortened version of sFile
-
-leng = alteredAudioData.shape[0]                # Number of audio-frames in alteredAudioData
+leng = audioData.shape[0]                # Number of audio-frames in alteredAudioData
 print("LENG: " + str(leng))
-outputAudioData = np.concatenate((outputAudioData,alteredAudioData/maxAudioVolume)) # Add alteredAudioData to outputAudioData after dividing by maxAudioVolume (so that all entries are doubles)
-
-#outputAudioData[outputPointer:endPointer] = alteredAudioData/maxAudioVolume
-
-# smooth out transition's audio by quickly fading in/out
-
-premask = np.arange(AUDIO_FADE_ENVELOPE_SIZE)/AUDIO_FADE_ENVELOPE_SIZE  # premask = [0, 1/400, 2/400, ..., 399/400]
-mask = np.repeat(premask[:, np.newaxis],2,axis=1) # make the fade-envelope mask stereo; mask = [[0, 0], [1/400, 1/400], ..., [399/400, 399/400]]. mask is the multiplier which masks audio-frames.
-outputAudioData[0:AUDIO_FADE_ENVELOPE_SIZE] *= mask # fade in in 400/44100 seconds by multiplying each audio-frame by elements in mask
-outputAudioData[leng-AUDIO_FADE_ENVELOPE_SIZE:leng] *= 1-mask # same as above but fading out
 
 endOutputFrame = int(math.ceil(leng/samplesPerFrame))         # Video-frame number of the ending frame in this chunk
 for outputFrame in range(0, endOutputFrame):         # Iterate over all video-frames in this range
-    inputFrame = (outputFrame-0)  # inputFrame is the video-frame which should be considered that corresponds to the audio-frame outputFrame
+    inputFrame = outputFrame  # inputFrame is the video-frame which should be considered that corresponds to the audio-frame outputFrame
     didItWork = copyFrame(inputFrame,outputFrame)   # Copy the frame, didItWork is true if the inputFrame file existed.
     # This is necessary because the audio and video don't line up and we may run out of audio before we finish processing the video.
     if didItWork:
@@ -203,10 +162,10 @@ for outputFrame in range(0, endOutputFrame):         # Iterate over all video-fr
 printTime()
 stringTemp = ""
 for i in range(50):
-    stringTemp += (str(outputAudioData[10000000+i][0]) + " ")
+    stringTemp += (str(audioData[10000000+i][0]) + " ")
 print("StringTemp: " + stringTemp)
 
-wavfile.write(TEMP_FOLDER+"/audioNew.wav",SAMPLE_RATE,outputAudioData)      # Combine the outputAudioData into a new .wav file at audioNew.wav
+wavfile.write(TEMP_FOLDER+"/audioNew.wav",SAMPLE_RATE,audioData)      # Combine the outputAudioData into a new .wav file at audioNew.wav
 
 '''
 outputFrame = math.ceil(outputPointer/samplesPerFrame)
