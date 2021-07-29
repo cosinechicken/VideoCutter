@@ -11,7 +11,6 @@ import math
 from shutil import copyfile, rmtree
 import os
 import argparse
-from pytube import YouTube
 from datetime import datetime
 
 def printTime():
@@ -19,13 +18,7 @@ def printTime():
     dt_string = now.strftime("%d/%m/%Y %H:%M:%S")
     f = open("C:\\Users\\brand\\Documents\\MIT_Course_Videos\\Lecture_Cutter_Cmd.txt", "a")
     f.write(dt_string + ", ")
-    print("CURRENT TIME: ", dt_string)	
-
-def downloadFile(url):
-    name = YouTube(url).streams.first().download()
-    newname = name.replace(' ','_')
-    os.rename(name,newname)
-    return newname
+    print("CURRENT TIME: ", dt_string)
 
 # Returns largest absolute value of any element in s (not necessarily 1D array)
 def getMaxVolume(s):
@@ -72,11 +65,10 @@ def deletePath(s): # Dangerous! Watch out!
 
 parser = argparse.ArgumentParser(description='Copies a video file.')
 parser.add_argument('--input_file', type=str,  help='the video file you want modified')
-parser.add_argument('--url', type=str, help='A youtube url to download and process')
 parser.add_argument('--output_file', type=str, default="", help="the output file. (optional. if not included, it'll just modify the input file name)")
 parser.add_argument('--sample_rate', type=float, default=44100, help="sample rate of the input and output videos")
 parser.add_argument('--frame_rate', type=float, default=23.98, help="frame rate of the input and output videos. optional... I try to find it out myself, but it doesn't always work.")
-parser.add_argument('--frame_quality', type=int, default=10, help="quality of frames to be extracted from input video. 1 is highest, 31 is lowest, 3 was the original default.")
+parser.add_argument('--frame_quality', type=int, default=6, help="quality of frames to be extracted from input video. 1 is highest, 31 is lowest, 3 was the original default.")
 
 args = parser.parse_args()
 
@@ -84,27 +76,14 @@ printTime()
 
 frameRate = args.frame_rate
 SAMPLE_RATE = args.sample_rate
-########################## (1)
-# if args.url != None:
-#     INPUT_FILE = downloadFile(args.url)
-# else:
-#     INPUT_FILE = args.input_file
-##########################
 
-URL = args.url
-FRAME_QUALITY = args.frame_quality
-########################## (2)
-# if len(args.output_file) >= 1:
-#     OUTPUT_FILE = args.output_file
-# else:
-#     OUTPUT_FILE = inputToOutputFilename(INPUT_FILE)
-########################## (3)
 INPUT_FILE_NAME = args.input_file
 INPUT_FILE = "C:\\Users\\brand\\Documents\\MIT_Course_Videos\\" + INPUT_FILE_NAME
+FRAME_QUALITY = args.frame_quality
 OUTPUT_FILE = INPUT_FILE
 INPUT_FILE += ".mp4"
 OUTPUT_FILE += "-NEW.mp4"
-##########################
+
 # Path name: C:\Users\brand\TEMP
 TEMP_FOLDER = "TEMP"
 AUDIO_FADE_ENVELOPE_SIZE = 400 # smooth out transitiion's audio by quickly fading in/out (arbitrary magic number whatever)
