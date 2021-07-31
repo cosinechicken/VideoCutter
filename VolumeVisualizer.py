@@ -1,5 +1,5 @@
 from contextlib import closing
-from PIL import Image
+from PIL import Image, ImageFont, ImageDraw
 import subprocess
 from audiotsm import phasevocoder
 from audiotsm.io.wav import WavReader, WavWriter
@@ -31,13 +31,14 @@ def getMaxVolume(s):
 # Returns true if the source file exists, false otherwise.
 def copyFrame(inputFrame,outputFrame):
     src = TEMP_FOLDER+"/frame{:06d}".format(inputFrame+1)+".jpg"
-    # (1280, 720)
     dst = TEMP_FOLDER+"/newFrame{:06d}".format(outputFrame+1)+".jpg"
-    if not os.path.isfile(src):
-        return False
-    copyfile(src, dst)
+    img = Image.new('RGB', (1280, 720), color = (255,255,255))
+    fnt = ImageFont.truetype("C:\\Users\\brand\\Documents\\GitHub\\VideoCutter\\freemono.ttf", 30)
+    frameText = "Frame: " + str(outputFrame)
+    ImageDraw.Draw(img).text((0, 0), frameText, font=fnt, fill=(0, 0, 0))
+    img.save(dst)
     if outputFrame%20 == 19:
-        print(str(outputFrame+1)+" time-altered frames saved.")
+        print(str(outputFrame+1)+" frames saved.")
     return True
 
 def inputToOutputFilename(filename):
