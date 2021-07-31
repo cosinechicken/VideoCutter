@@ -29,8 +29,7 @@ def getMaxVolume(s):
 # Copy the frame and saves it
 # (inputFrame, outputFrame): (int, int)
 # Returns true if the source file exists, false otherwise.
-def copyFrame(inputFrame,outputFrame):
-    src = TEMP_FOLDER+"/frame{:06d}".format(inputFrame+1)+".jpg"
+def createNewFrame(outputFrame):
     dst = TEMP_FOLDER+"/newFrame{:06d}".format(outputFrame+1)+".jpg"
     img = Image.new('RGB', (1280, 720), color = (255,255,255))
     fnt = ImageFont.truetype("C:\\Users\\brand\\Documents\\GitHub\\VideoCutter\\freemono.ttf", 30)
@@ -39,7 +38,6 @@ def copyFrame(inputFrame,outputFrame):
     img.save(dst)
     if outputFrame%20 == 19:
         print(str(outputFrame+1)+" frames saved.")
-    return True
 
 def inputToOutputFilename(filename):
     dotIndex = filename.rfind(".")
@@ -48,20 +46,20 @@ def inputToOutputFilename(filename):
 def createPath(s):
     #assert (not os.path.exists(s)), "The filepath "+s+" already exists. Don't want to overwrite it. Aborting."
 
-    try:  
+    try:
         os.mkdir(s)
-    except OSError:  
+    except OSError:
         # assert False, "Creation of the directory %s failed. (The TEMP folder may already exist. Delete or rename it, and try again.)"
         deletePath(s)
-        try: 
+        try:
             os.mkdir(s)
         except OSError:
             assert False, "CreatePath failed twice in a row"
 
 def deletePath(s): # Dangerous! Watch out!
-    try:  
+    try:
         rmtree(s,ignore_errors=False)
-    except OSError:  
+    except OSError:
         print ("Deletion of the directory %s failed" % s)
         print(OSError)
 
@@ -91,10 +89,6 @@ TEMP_FOLDER = "TEMP"
 AUDIO_FADE_ENVELOPE_SIZE = 400 # smooth out transitiion's audio by quickly fading in/out (arbitrary magic number whatever)
 
 createPath(TEMP_FOLDER)
-
-# split the video into individual frames
-command = "ffmpeg -i "+INPUT_FILE+" -qscale:v "+str(FRAME_QUALITY)+" "+TEMP_FOLDER+"/frame%06d.jpg -hide_banner"
-subprocess.call(command, shell=True)
 
 # copy the audio into a wav file
 command = "ffmpeg -i "+INPUT_FILE+" -ab 160k -ac 2 -ar "+str(SAMPLE_RATE)+" -vn "+TEMP_FOLDER+"/audio.wav"
@@ -128,13 +122,8 @@ lastExistingFrame = None
 printTime()
 
 for outputFrame in range(0, audioFrameCount):         # Iterate over all video-frames in this range
-    inputFrame = outputFrame  # inputFrame is the video-frame which should be considered that corresponds to the audio-frame outputFrame
-    didItWork = copyFrame(inputFrame,outputFrame)   # Copy the frame, didItWork is true if the inputFrame file existed.
+    createNewFrame(outputFrame)   # Copy the frame
     # This is necessary because the audio and video don't line up and we may run out of audio before we finish processing the video.
-    if didItWork:
-        lastExistingFrame = inputFrame              # If the inputFrame file exists, then that becomes the last existing frame
-    else:
-        copyFrame(lastExistingFrame,outputFrame)    # If the inputFrame file doesn't exist, then resort to using the lastExistingFrame.
 
 printTime()
 stringTemp = ""
