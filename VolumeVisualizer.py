@@ -29,11 +29,11 @@ def getMaxVolume(s):
 # Copy the frame and saves it
 # (inputFrame, outputFrame): (int, int)
 # Returns true if the source file exists, false otherwise.
-def createNewFrame(outputFrame):
+def createNewFrame(outputFrame, rms):
     dst = TEMP_FOLDER+"/newFrame{:06d}".format(outputFrame+1)+".jpg"
     img = Image.new('RGB', (1280, 720), color = (255,255,255))
     fnt = ImageFont.truetype("C:\\Users\\brand\\Documents\\GitHub\\VideoCutter\\freemono.ttf", 30)
-    frameText = "Frame: " + str(outputFrame)
+    frameText = "Volume: " + str(rms)
     ImageDraw.Draw(img).text((0, 0), frameText, font=fnt, fill=(0, 0, 0))
     img.save(dst)
     if outputFrame%20 == 19:
@@ -116,13 +116,22 @@ print("MaxAudioVolume: " + str(maxAudioVolume))
 print("SamplesPerFrame: " + str(samplesPerFrame))
 print("AudioFrameCount: " + str(audioFrameCount))
 ###
+audioRMS = np.zeros((audioFrameCount))
+
+# Iterate through each video-frame
+for i in range(audioFrameCount):
+    start = int(i*samplesPerFrame)                              # Start audio-frame of video-frame i
+    end = min(int((i+1)*samplesPerFrame),audioSampleCount)      # End audio-frame of video-frame i
+    audiochunks = audioData[start:end].astype(float)            # Array of audio from start to end audio-frame of video-frame i
+    temp = np.mean(np.square(audiochunks))
+    audioRMS[i] = 20*np.log10(np.sqrt(temp))
 
 lastExistingFrame = None
 
 printTime()
 
 for outputFrame in range(0, audioFrameCount):         # Iterate over all video-frames in this range
-    createNewFrame(outputFrame)   # Copy the frame
+    createNewFrame(outputFrame, audioRMS[outputFrame])   # Copy the frame
     # This is necessary because the audio and video don't line up and we may run out of audio before we finish processing the video.
 
 printTime()
