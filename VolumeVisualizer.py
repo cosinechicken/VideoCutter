@@ -12,6 +12,9 @@ from shutil import copyfile, rmtree
 import os
 import argparse
 from datetime import datetime
+import parselmouth
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 def printTime():
     now = datetime.now()
@@ -35,10 +38,9 @@ def createNewFrame(outputFrame):
     fnt = ImageFont.truetype("C:\\Users\\brand\\Documents\\GitHub\\VideoCutter\\freemono.ttf", 30)
     frameText = "Volume: " + str(audioRMS[outputFrame])
     ImageDraw.Draw(img).text((0, 0), frameText, font=fnt, fill=(0, 0, 0))
-    r = 2
-    for i in range(300):
+    for i in range(400):
         if outputFrame > i and audioRMS[outputFrame-i] > -20 and audioRMS[outputFrame-i-1] > -20:
-            ImageDraw.Draw(img).line((720-2*i, 600-4*audioRMS[outputFrame-i], 720-2*i-2, 600-4*audioRMS[outputFrame-i-1]), fill=(255,0,0,255), width=2)
+            ImageDraw.Draw(img).line((920-2*i, 600-4*audioRMS[outputFrame-i], 920-2*i-2, 600-4*audioRMS[outputFrame-i-1]), fill=(255,0,0,255), width=2)
     img.save(dst)
     if outputFrame%20 == 19:
         print(str(outputFrame+1)+" frames saved.")
@@ -67,6 +69,8 @@ def deletePath(s): # Dangerous! Watch out!
         print ("Deletion of the directory %s failed" % s)
         print(OSError)
 
+sns.set()
+
 parser = argparse.ArgumentParser(description='Copies a video file.')
 parser.add_argument('--input_file', type=str,  help='the video file you want modified')
 parser.add_argument('--output_file', type=str, default="", help="the output file. (optional. if not included, it'll just modify the input file name)")
@@ -85,7 +89,7 @@ INPUT_FILE_NAME = args.input_file
 INPUT_FILE = "C:\\Users\\brand\\Documents\\MIT_Course_Videos\\" + INPUT_FILE_NAME
 FRAME_QUALITY = args.frame_quality
 OUTPUT_FILE = INPUT_FILE
-INPUT_FILE += ".mp4"
+INPUT_FILE += ".mov"
 OUTPUT_FILE += "-NEW.mp4"
 
 # Path name: C:\Users\brand\TEMP
@@ -104,10 +108,6 @@ subprocess.call(command, shell=True)
 sampleRate, audioData = wavfile.read(TEMP_FOLDER+"/audio.wav")
 # Print data about sampleRate and audioData
 print("AudioData shape: " + str(audioData.shape))   # (116134912, 2)
-stringTemp = ""
-for i in range(100):
-    stringTemp += (str(audioData[10000000+i][0]) + " ")
-print("StringTemp: " + stringTemp)
 print("Datatype: " + str(dtype(audioData[0][0])))
 ###
 audioSampleCount = audioData.shape[0]           # number of samples or "audio-frames" (116134912)
@@ -139,10 +139,6 @@ for outputFrame in range(0, audioFrameCount):         # Iterate over all video-f
     # This is necessary because the audio and video don't line up and we may run out of audio before we finish processing the video.
 
 printTime()
-stringTemp = ""
-for i in range(50):
-    stringTemp += (str(audioData[10000000+i][0]) + " ")
-print("StringTemp: " + stringTemp)
 
 wavfile.write(TEMP_FOLDER+"/audioNew.wav",SAMPLE_RATE,audioData)      # Combine the outputAudioData into a new .wav file at audioNew.wav
 
@@ -155,6 +151,42 @@ for endGap in range(outputFrame,audioFrameCount):
 command = "ffmpeg -framerate "+str(frameRate)+" -i "+TEMP_FOLDER+"/newFrame%06d.jpg -i "+TEMP_FOLDER+"/audioNew.wav -strict -2 "+OUTPUT_FILE
 subprocess.call(command, shell=True)
 
+# Plot nice figures using Python's "standard" matplotlib library
+snd = parselmouth.Sound(TEMP_FOLDER+"/audio.wav")
+plt.figure()
+plt.plot(snd.xs(), (snd.values.T))
+plt.xlim([snd.xmin, snd.xmax])
+plt.xlabel("time [s]")
+plt.ylabel("amplitude")
+plt.show() # or plt.savefig("sound.png"), or plt.savefig("sound.pdf")
+
+def draw_spectrogram(spectrogram, dynamic_range=70):
+    X, Y = spectrogram.x_grid(), spectrogram.y_grid()
+    sg_db = 10 * np.log10(spectrogram.values)
+    plt.pcolormesh(X, Y, sg_db, vmin=sg_db.max() - dynamic_range, cmap='afmhot')
+    plt.ylim([spectrogram.ymin, spectrogram.ymax])
+    plt.xlabel("time [s]")
+    plt.ylabel("frequency [Hz]")
+    print("Spectrogram drawn!")
+
+def draw_intensity(intensity):
+    plt.plot(intensity.xs(), intensity.values.T, linewidth=3, color='w')
+    plt.plot(intensity.xs(), intensity.values.T, linewidth=1)
+    plt.grid(False)
+    plt.ylim(0)
+    plt.ylabel("intensity [dB]")
+    print("Intensity drawn!")
+
+# intensity = snd.to_intensity()
+# print("Intensity calculated!")
+spectrogram = snd.to_spectrogram()
+print("Spectrogram calculated!")
+plt.figure()
+draw_spectrogram(spectrogram)
+# plt.twinx()
+# draw_intensity(intensity)
+plt.xlim([snd.xmin, snd.xmax])
+plt.show()
 
 deletePath(TEMP_FOLDER) # Delete everything in TEMP_FOLDER
 printTime()

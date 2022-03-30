@@ -80,11 +80,10 @@ parser.add_argument('--silent_speed', type=float, default=5.00, help="the speed 
 parser.add_argument('--frame_margin', type=float, default=1, help="some silent frames adjacent to sounded frames are included to provide context. How many frames on either the side of speech should be included? That's this variable.")
 parser.add_argument('--sample_rate', type=float, default=44100, help="sample rate of the input and output videos")
 parser.add_argument('--frame_rate', type=float, default=30, help="frame rate of the input and output videos. optional... I try to find it out myself, but it doesn't always work.")
-parser.add_argument('--frame_quality', type=int, default=10, help="quality of frames to be extracted from input video. 1 is highest, 31 is lowest, 3 was the original default.")
+parser.add_argument('--frame_quality', type=int, default=4, help="quality of frames to be extracted from input video. 1 is highest, 31 is lowest, 3 was the original default.")
 
 args = parser.parse_args()
 
-printTime()
 
 frameRate = args.frame_rate
 SAMPLE_RATE = args.sample_rate
@@ -113,6 +112,13 @@ INPUT_FILE += ".mp4"
 OUTPUT_FILE += "-NEW.mp4"
 ##########################
 # Path name: C:\Users\brand\TEMP
+
+f = open("C:\\Users\\brand\\Documents\\MIT_Course_Videos\\Lecture_Cutter_Cmd.txt", "a")
+f.write(args.input_file + " " + "(" + str(args.sounded_speed) + ", " + str(args.silent_speed) + ", " + str(int(args.frame_margin)) + ", " + str(args.silent_threshold) + "): ")
+f.close()
+
+printTime()
+
 TEMP_FOLDER = "TEMP"
 AUDIO_FADE_ENVELOPE_SIZE = 400 # smooth out transitiion's audio by quickly fading in/out (arbitrary magic number whatever)
 
@@ -124,6 +130,7 @@ subprocess.call(command, shell=True)
 
 # copy the audio into a wav file
 command = "ffmpeg -i "+INPUT_FILE+" -ab 160k -ac 2 -ar "+str(SAMPLE_RATE)+" -vn "+TEMP_FOLDER+"/audio.wav"
+# ffmpeg -i "C:/Users/brand/Downloads/Chopin Op 27 No 2.mp4" -ab 160k -ac 2 -ar 44100 -vn "C:/Users/brand/Downloads/Chopin Op 27 No 2.mp3"
 
 subprocess.call(command, shell=True)
 
@@ -133,9 +140,9 @@ sampleRate, audioData = wavfile.read(TEMP_FOLDER+"/audio.wav")
 # Print data about sampleRate and audioData
 print("AudioData shape: " + str(audioData.shape))   # (116134912, 2)
 stringTemp = ""
-for i in range(100):
-    stringTemp += (str(audioData[10000000+i][0]) + " ")
-print("StringTemp: " + stringTemp)
+# for i in range(100):
+#      stringTemp += (str(audioData[10000000+i][0]) + " ")
+# print("StringTemp: " + stringTemp)
 print("Datatype: " + str(dtype(audioData[0][0])))
 ###
 audioSampleCount = audioData.shape[0]           # number of samples or "audio-frames" (116134912)
@@ -180,7 +187,7 @@ outputPointer = 0
 lastExistingFrame = None
 
 printTime()
-
+print(chunks)
 for chunk in chunks:        # Iterate through each chunk (chunk is of form [start video-frame, end video-frame, 1 if included and 0 if not]
     audioChunk = audioData[int(chunk[0]*samplesPerFrame):int(chunk[1]*samplesPerFrame)] # audioChunk is the array of sounds in audioData in the range of a given chunk
     
@@ -226,9 +233,9 @@ for chunk in chunks:        # Iterate through each chunk (chunk is of form [star
 
 printTime()
 stringTemp = ""
-for i in range(50):
-    stringTemp += (str(outputAudioData[10000000+i][0]) + " ")
-print("StringTemp: " + stringTemp)
+# for i in range(50):
+#     stringTemp += (str(outputAudioData[10000000+i][0]) + " ")
+# print("StringTemp: " + stringTemp)
 
 wavfile.write(TEMP_FOLDER+"/audioNew.wav",SAMPLE_RATE,outputAudioData)      # Combine the outputAudioData into a new .wav file at audioNew.wav
 
@@ -244,3 +251,6 @@ subprocess.call(command, shell=True)
 
 deletePath(TEMP_FOLDER) # Delete everything in TEMP_FOLDER
 printTime()
+f = open("C:\\Users\\brand\\Documents\\MIT_Course_Videos\\Lecture_Cutter_Cmd.txt", "a")
+f.write("\n")
+f.close()
