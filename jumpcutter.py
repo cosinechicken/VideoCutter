@@ -19,7 +19,8 @@ def printTime():
     dt_string = now.strftime("%d/%m/%Y %H:%M:%S")
     f = open("C:\\Users\\brand\\Documents\\MIT_Course_Videos\\Lecture_Cutter_Cmd.txt", "a")
     f.write(dt_string + ", ")
-    print("CURRENT TIME: ", dt_string)	
+    print("CURRENT TIME: ", dt_string)
+    f.close()
 
 def downloadFile(url):
     name = YouTube(url).streams.first().download()
@@ -79,8 +80,8 @@ parser.add_argument('--sounded_speed', type=float, default=1.00, help="the speed
 parser.add_argument('--silent_speed', type=float, default=5.00, help="the speed that silent frames should be played at. 999999 for jumpcutting.")
 parser.add_argument('--frame_margin', type=float, default=1, help="some silent frames adjacent to sounded frames are included to provide context. How many frames on either the side of speech should be included? That's this variable.")
 parser.add_argument('--sample_rate', type=float, default=44100, help="sample rate of the input and output videos")
-parser.add_argument('--frame_rate', type=float, default=30, help="frame rate of the input and output videos. optional... I try to find it out myself, but it doesn't always work.")
-parser.add_argument('--frame_quality', type=int, default=10, help="quality of frames to be extracted from input video. 1 is highest, 31 is lowest, 3 was the original default.")
+parser.add_argument('--frame_rate', type=float, default=29.97, help="frame rate of the input and output videos. optional... I try to find it out myself, but it doesn't always work.")
+parser.add_argument('--frame_quality', type=int, default=5, help="quality of frames to be extracted from input video. 1 is highest, 31 is lowest, 3 was the original default.")
 
 args = parser.parse_args()
 
@@ -133,8 +134,8 @@ sampleRate, audioData = wavfile.read(TEMP_FOLDER+"/audio.wav")
 # Print data about sampleRate and audioData
 print("AudioData shape: " + str(audioData.shape))   # (116134912, 2)
 stringTemp = ""
-for i in range(100):
-    stringTemp += (str(audioData[10000000+i][0]) + " ")
+# for i in range(100):
+    # stringTemp += (str(audioData[10000000+i][0]) + " ")
 print("StringTemp: " + stringTemp)
 print("Datatype: " + str(dtype(audioData[0][0])))
 ###
@@ -226,8 +227,8 @@ for chunk in chunks:        # Iterate through each chunk (chunk is of form [star
 
 printTime()
 stringTemp = ""
-for i in range(50):
-    stringTemp += (str(outputAudioData[10000000+i][0]) + " ")
+# for i in range(50):
+    # stringTemp += (str(outputAudioData[10000000+i][0]) + " ")
 print("StringTemp: " + stringTemp)
 
 wavfile.write(TEMP_FOLDER+"/audioNew.wav",SAMPLE_RATE,outputAudioData)      # Combine the outputAudioData into a new .wav file at audioNew.wav
