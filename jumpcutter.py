@@ -85,6 +85,9 @@ parser.add_argument('--frame_quality', type=int, default=5, help="quality of fra
 
 args = parser.parse_args()
 
+with open("C:\\Users\\brand\\Documents\\MIT_Course_Videos\\Lecture_Cutter_Cmd.txt", "a") as f:
+    f.write("JumpCutter (" + args.input_file + "): ")
+
 printTime()
 
 frameRate = args.frame_rate
@@ -245,3 +248,6 @@ subprocess.call(command, shell=True)
 
 deletePath(TEMP_FOLDER) # Delete everything in TEMP_FOLDER
 printTime()
+
+with open("C:\\Users\\brand\\Documents\\MIT_Course_Videos\\Lecture_Cutter_Cmd.txt", "a") as f:
+    f.write("\n")

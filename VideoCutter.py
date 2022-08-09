@@ -16,8 +16,8 @@ from datetime import datetime
 def printTime():
     now = datetime.now()
     dt_string = now.strftime("%d/%m/%Y %H:%M:%S")
-    f = open("C:\\Users\\brand\\Documents\\MIT_Course_Videos\\Lecture_Cutter_Cmd.txt", "a")
-    f.write(dt_string + ", ")
+    with open("C:\\Users\\brand\\Documents\\MIT_Course_Videos\\Lecture_Cutter_Cmd.txt", "a") as f:
+        f.write(dt_string + ", ")
     print("CURRENT TIME: ", dt_string)
 
 # Returns largest absolute value of any element in s (not necessarily 1D array)
@@ -72,6 +72,9 @@ parser.add_argument('--frame_rate', type=float, default=23.98, help="frame rate 
 parser.add_argument('--frame_quality', type=int, default=6, help="quality of frames to be extracted from input video. 1 is highest, 31 is lowest, 3 was the original default.")
 
 args = parser.parse_args()
+
+with open("C:\\Users\\brand\\Documents\\MIT_Course_Videos\\Lecture_Cutter_Cmd.txt", "a") as f:
+    f.write("VideoCutter (" + args.input_file + "): ")
 
 printTime()
 
@@ -155,3 +158,6 @@ subprocess.call(command, shell=True)
 
 deletePath(TEMP_FOLDER) # Delete everything in TEMP_FOLDER
 printTime()
+
+with open("C:\\Users\\brand\\Documents\\MIT_Course_Videos\\Lecture_Cutter_Cmd.txt", "a") as f:
+    f.write("\n")
