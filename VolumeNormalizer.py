@@ -124,6 +124,11 @@ for filename in os.listdir(args.input_file):
     # mult = 2
     print("Multiplier: " + str(mult))
     audioData = np.round(audioData * mult)
+    # for i in range(audioFrameCount):
+    #     mult = np.exp(1.2*np.log(10)*(END_VOLUME - 20*np.log10(audioRMS[i]))/20)
+    #     start = int(i * samplesPerFrame)
+    #     end = min(int((i + 1) * samplesPerFrame), audioSampleCount)
+    #     audioData[start:end] = audioData[start:end] * mult
     newMaxVol = getMaxVolume(audioData)
     print("NEW MAX VOLUME: " + str(newMaxVol))
     if newMaxVol > 32768:
